@@ -4,7 +4,8 @@ public class Main {
 
 	public static void main(String[] args) throws Exception{
 		
-		System.out.println(Configuration.instance().getFirebaseAppUrl());
+		//System.out.println(Configuration.instance().getFirebaseAppUrl());
+		new Thread(new StatusChecker()).start();
 		
 		waitIndefinitly();
 	}
