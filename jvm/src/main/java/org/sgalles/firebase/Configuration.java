@@ -4,7 +4,10 @@ import org.aeonbits.owner.Config;
 import org.aeonbits.owner.Config.Sources;
 import org.aeonbits.owner.ConfigFactory;
 
-@Sources({ "file:~/firebase.properties"})
+@Sources({ 
+	"file:/data/opt/firebase.properties",
+	"file:~/firebase.properties"
+	})
 public interface Configuration extends Config{
 
 	

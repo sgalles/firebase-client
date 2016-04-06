@@ -1,10 +1,15 @@
 package org.sgalles.firebase;
 
+import java.util.Objects;
+
+import com.firebase.client.Firebase;
+
 public class Main {
 
 	public static void main(String[] args) throws Exception{
 		
-		//System.out.println(Configuration.instance().getFirebaseAppUrl());
+		//Firebase ref = new Firebase(Configuration.instance().getFirebaseAppUrl());
+		
 		new Thread(new StatusChecker()).start();
 		
 		waitIndefinitly();
