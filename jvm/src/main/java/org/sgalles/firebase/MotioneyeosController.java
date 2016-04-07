@@ -1,6 +1,7 @@
 package org.sgalles.firebase;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.zeroturnaround.exec.ProcessExecutor;
 
@@ -15,7 +16,7 @@ public class MotioneyeosController implements ValueEventListener{
 	private static final String RUNNING_CHILD = "running";
 	private static final String SWITCH_CHILD = "switch";
 	
-	private Boolean motioneyeosRunning = null;
+	private AtomicReference<Boolean> motioneyeosRunning = new AtomicReference<>(null);
 	private final Firebase ref;
 
 	public static void main(String[] args) throws Exception {
@@ -52,7 +53,7 @@ public class MotioneyeosController implements ValueEventListener{
 	}
 	
 
-	private synchronized void checkMotioneyeosRunning() {
+	private void checkMotioneyeosRunning() {
 
 		try{
 			int exitValue = new ProcessExecutor()
@@ -62,8 +63,8 @@ public class MotioneyeosController implements ValueEventListener{
 					.execute().getExitValue();
 			final Boolean updatedMotioneyeosRunning = Boolean.valueOf(exitValue == 0);
 			
-			if (!updatedMotioneyeosRunning.equals(motioneyeosRunning)) {
-				motioneyeosRunning = updatedMotioneyeosRunning;
+			if (!updatedMotioneyeosRunning.equals(motioneyeosRunning.get())) {
+				motioneyeosRunning.set(updatedMotioneyeosRunning);
 				System.out.println("motioneyeosRunning=" + motioneyeosRunning);
 				firebaseUpdateMotioneyeosRunning();
 			}
@@ -71,22 +72,12 @@ public class MotioneyeosController implements ValueEventListener{
 			throw new IllegalStateException(e);
 		}
 	}
-
-	private void firebaseUpdateMotioneyeosRunning() {
-		System.out.println("Firebaseset value : " + RUNNING_CHILD); 
-		ref.child(MOTIONEYEOS_CHILD).child(RUNNING_CHILD).setValue(motioneyeosRunning);
-	}
 	
-	private void firebaseResetSwitch() {
-		System.out.println("Firebaseset value : " + SWITCH_CHILD); 
-		ref.child(MOTIONEYEOS_CHILD).child(SWITCH_CHILD).setValue(false);
-	}
-	
-	private synchronized void switchMotioneyeos(){
+	private void switchMotioneyeos(){
 		
 		try{
 			firebaseResetSwitch();
-			if(!motioneyeosRunning){
+			if(Boolean.FALSE.equals(motioneyeosRunning.get())){
 				System.out.println("Starting motioneye...");
 				new ProcessExecutor()
 				.command("/etc/init.d/S85motioneye", "start")
@@ -103,6 +94,18 @@ public class MotioneyeosController implements ValueEventListener{
 			throw new IllegalStateException(e);
 		}
 	}
+
+
+	private void firebaseUpdateMotioneyeosRunning() {
+		System.out.println("Firebaseset value : " + RUNNING_CHILD); 
+		ref.child(MOTIONEYEOS_CHILD).child(RUNNING_CHILD).setValue(motioneyeosRunning);
+	}
+	
+	private void firebaseResetSwitch() {
+		System.out.println("Firebaseset value : " + SWITCH_CHILD); 
+		ref.child(MOTIONEYEOS_CHILD).child(SWITCH_CHILD).setValue(false);
+	}
+	
 
 
 	@Override
