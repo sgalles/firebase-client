@@ -6,7 +6,7 @@ plugins {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'application'
-mainClassName = "org.sgalles.firebase.Main"
+mainClassName = "org.sgalles.firebase.MotioneyeosController"
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
