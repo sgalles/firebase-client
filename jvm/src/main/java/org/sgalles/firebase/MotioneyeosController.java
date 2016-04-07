@@ -1,6 +1,5 @@
 package org.sgalles.firebase;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.zeroturnaround.exec.ProcessExecutor;
@@ -13,10 +12,16 @@ import com.firebase.client.ValueEventListener;
 public class MotioneyeosController implements ValueEventListener{
 
 	private static final String MOTIONEYEOS_CHILD = "motioneyeos";
+	private static final String FIREWALL_CHILD = "firewall";
 	private static final String RUNNING_CHILD = "running";
 	private static final String SWITCH_CHILD = "switch";
 	
+	
+
+	
 	private AtomicReference<Boolean> motioneyeosRunning = new AtomicReference<>(null);
+	private AtomicReference<Boolean> firewallRunning = new AtomicReference<>(null);
+	
 	private final Firebase ref;
 
 	public static void main(String[] args) throws Exception {
@@ -34,6 +39,7 @@ public class MotioneyeosController implements ValueEventListener{
 			try {
 				Thread.sleep(1000);
 				checkMotioneyeosRunning();
+				checkFirewallRunning();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -44,10 +50,13 @@ public class MotioneyeosController implements ValueEventListener{
 
 	@Override
 	public void onDataChange(DataSnapshot snapshot) {
-		System.out.println("onDataChange=" + snapshot);
-		Boolean mustSwitch = snapshot.child(MOTIONEYEOS_CHILD).child(SWITCH_CHILD).getValue(Boolean.class);
-        if(Boolean.TRUE.equals(mustSwitch)){
+		Boolean mustSwitchMotioneyeos = snapshot.child(MOTIONEYEOS_CHILD).child(SWITCH_CHILD).getValue(Boolean.class);
+        if(Boolean.TRUE.equals(mustSwitchMotioneyeos)){
         	switchMotioneyeos();
+        }
+        Boolean mustSwitchFirewall = snapshot.child(FIREWALL_CHILD).child(SWITCH_CHILD).getValue(Boolean.class);
+        if(Boolean.TRUE.equals(mustSwitchFirewall)){
+        	switchFirewall();
         }
 		
 	}
@@ -73,37 +82,81 @@ public class MotioneyeosController implements ValueEventListener{
 		}
 	}
 	
+	private void checkFirewallRunning() {
+
+		try{
+			int exitValue = new ProcessExecutor()
+					.command("/bin/sh", "-c",
+							"iptables -L | grep www &>/dev/null")
+					.execute().getExitValue();
+			final Boolean updatedFirewallRunning = Boolean.valueOf(exitValue == 0);
+			
+			if (!updatedFirewallRunning.equals(firewallRunning.get())) {
+				firewallRunning.set(updatedFirewallRunning);
+				System.out.println("firewallRunning=" + firewallRunning);
+				firebaseUpdateFirewallRunning();
+			}
+		}catch(Exception e){
+			throw new IllegalStateException(e);
+		}
+	}
+	
 	private void switchMotioneyeos(){
 		
 		try{
-			firebaseResetSwitch();
+			firebaseResetMotioneyeosSwitch();
 			if(Boolean.FALSE.equals(motioneyeosRunning.get())){
 				System.out.println("Starting motioneye...");
 				new ProcessExecutor()
 				.command("/etc/init.d/S85motioneye", "start")
 				.start();
-				System.out.println("Starting motioneye...done");
 			}else{
 				System.out.println("Stopping motioneye...");
 				new ProcessExecutor()
 				.command("/etc/init.d/S85motioneye", "stop")
 				.start();
-				System.out.println("Stopping motioneye...done");
+			}
+		}catch(Exception e){
+			throw new IllegalStateException(e);
+		}
+	}
+	
+	private void switchFirewall(){
+		
+		try{
+			firebaseResetFirewallSwitch();
+			if(Boolean.FALSE.equals(firewallRunning.get())){
+				System.out.println("Starting firewall...");
+				new ProcessExecutor()
+				.command("/usr/sbin/iptables -A INPUT -p tcp --destination-port 80 ! -s localhost -j DROP".split(" +"))
+				.start();
+			}else{
+				System.out.println("Stopping firewall...");
+				new ProcessExecutor()
+				.command("/usr/sbin/iptables -F".split(" +"))
+				.start();
 			}
 		}catch(Exception e){
 			throw new IllegalStateException(e);
 		}
 	}
 
+	// iptables -A INPUT -p tcp --destination-port 80 -j DROP
 
 	private void firebaseUpdateMotioneyeosRunning() {
-		System.out.println("Firebaseset value : " + RUNNING_CHILD); 
-		ref.child(MOTIONEYEOS_CHILD).child(RUNNING_CHILD).setValue(motioneyeosRunning);
+		ref.child(MOTIONEYEOS_CHILD).child(RUNNING_CHILD).setValue(motioneyeosRunning.get());
 	}
 	
-	private void firebaseResetSwitch() {
-		System.out.println("Firebaseset value : " + SWITCH_CHILD); 
+	private void firebaseUpdateFirewallRunning() {
+		ref.child(FIREWALL_CHILD).child(RUNNING_CHILD).setValue(firewallRunning.get());
+	}
+	
+	private void firebaseResetMotioneyeosSwitch() {
 		ref.child(MOTIONEYEOS_CHILD).child(SWITCH_CHILD).setValue(false);
+	}
+	
+	private void firebaseResetFirewallSwitch() {
+		ref.child(FIREWALL_CHILD).child(SWITCH_CHILD).setValue(false);
 	}
 	
 
