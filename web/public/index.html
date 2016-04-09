@@ -18,41 +18,44 @@
 
 <script src="configuration.js"></script>
 <script>
-var myFirebaseRef = new Firebase(conf.firebaseServer);
-var childMotioneyeos = myFirebaseRef.child("motioneyeos");
-var childMotioneyeosSwitch = childMotioneyeos.child("switch");
-var childMotioneyeosRunning = childMotioneyeos.child("running");
-var childFirewall = myFirebaseRef.child("firewall");
-var childFirewallSwitch = childFirewall.child("switch");
-var childFirewallRunning = childFirewall.child("running");
-
-$( "#buttonMotionEyeOs" ).click(function() {
-	childMotioneyeosSwitch.set(true);
-});
-$( "#buttonFirewall" ).click(function() {
-	childFirewallSwitch.set(true);
-});
-
-childMotioneyeosRunning.on("value", function(snapshot) {
-	var b = $( "#buttonMotionEyeOs" )
-	if(snapshot.val()){
-		b.removeClass('btn-danger')
-		b.addClass('btn-success')
-	}else{
-		b.removeClass('btn-success')
-		b.addClass('btn-danger')
+$(function() {
+	var myFirebaseRef = new Firebase(conf.firebaseServer);
+	
+	function initButton(buttonSubfix, firebaseRoot){
+		
+		var childSwitch = firebaseRoot.child("switch");
+		var childRunning = firebaseRoot.child("running");
+		var b = $("#button" +  buttonSubfix);
+		
+		b.click(function() {
+			childSwitch.set(true);
+		});
+	
+		childRunning.on("value", function(snapshot) {
+			if(snapshot.val()){
+				b.removeClass('btn-danger').addClass('btn-success');
+			}else{
+				b.removeClass('btn-success').addClass('btn-danger');
+			}
+		});
+	
+		childSwitch.on("value", function(snapshot) {
+			if(snapshot.val()){
+				b.addClass('active');
+			}else{
+				b.removeClass('active');
+			}
+		});
+	
 	}
-});
+	
+	var childMotioneyeos = myFirebaseRef.child("motioneyeos");
+	initButton("MotionEyeOs",childMotioneyeos);
+	
+	var childFirewall = myFirebaseRef.child("firewall");
+	initButton("Firewall",childFirewall);
 
-childMotioneyeosSwitch.on("value", function(snapshot) {
-	var b = $( "#buttonMotionEyeOs" )
-	if(snapshot.val()){
-		b.addClass('active')
-	}else{
-		b.removeClass('active')
-	}
 });
-
 </script>
 
 </body>
