@@ -1,0 +1,3 @@
+conf = {
+		firebaseServer:"https://zappy-9999.firebaseio.com/"
+}

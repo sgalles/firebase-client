@@ -141,7 +141,6 @@ public class MotioneyeosController implements ValueEventListener{
 		}
 	}
 
-	// iptables -A INPUT -p tcp --destination-port 80 -j DROP
 
 	private void firebaseUpdateMotioneyeosRunning() {
 		ref.child(MOTIONEYEOS_CHILD).child(RUNNING_CHILD).setValue(motioneyeosRunning.get());

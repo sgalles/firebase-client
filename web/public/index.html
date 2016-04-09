@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Bootstrap Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+  <script src="https://cdn.firebase.com/js/client/2.4.2/firebase.js"></script>
+</head>
+<body>
+
+ <div class="container">
+    <button id="buttonMotionEyeOs" type="button" class="btn btn-lg btn-block">MotionEyeOs</button>
+  	<button id="buttonFirewall" type="button" class="btn btn-lg btn-block">Firewall</button>
+</div>
+
+<script src="configuration.js"></script>
+<script>
+var myFirebaseRef = new Firebase(conf.firebaseServer);
+var childMotioneyeos = myFirebaseRef.child("motioneyeos");
+var childMotioneyeosSwitch = childMotioneyeos.child("switch");
+var childMotioneyeosRunning = childMotioneyeos.child("running");
+var childFirewall = myFirebaseRef.child("firewall");
+var childFirewallSwitch = childFirewall.child("switch");
+var childFirewallRunning = childFirewall.child("running");
+
+$( "#buttonMotionEyeOs" ).click(function() {
+	childMotioneyeosSwitch.set(true);
+});
+$( "#buttonFirewall" ).click(function() {
+	childFirewallSwitch.set(true);
+});
+
+childMotioneyeosRunning.on("value", function(snapshot) {
+	var b = $( "#buttonMotionEyeOs" )
+	if(snapshot.val()){
+		b.removeClass('btn-danger')
+		b.addClass('btn-success')
+	}else{
+		b.removeClass('btn-success')
+		b.addClass('btn-danger')
+	}
+});
+
+childMotioneyeosSwitch.on("value", function(snapshot) {
+	var b = $( "#buttonMotionEyeOs" )
+	if(snapshot.val()){
+		b.addClass('active')
+	}else{
+		b.removeClass('active')
+	}
+});
+
+</script>
+
+</body>
+</html>

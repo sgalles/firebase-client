@@ -5,3 +5,6 @@ jvm/.classpath
 jvm/.project
 jvm/.settings
 jvm/gradle.properties
+web/public/configuration.js
+web/firebase.json
+web/.project
