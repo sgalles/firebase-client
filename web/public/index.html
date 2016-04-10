@@ -20,7 +20,13 @@
 <script>
 $(function() {
 	var myFirebaseRef = new Firebase(conf.firebaseServer);
-	
+	myFirebaseRef.authWithOAuthPopup("google", function(error, authData) {
+		  if (error) {
+			    console.log("Login Failed!", error);
+			  } else {
+			    console.log("Authenticated successfully with payload:", authData);
+			  }
+			});
 	function initButton(buttonSubfix, firebaseRoot){
 		
 		var childSwitch = firebaseRoot.child("switch");
