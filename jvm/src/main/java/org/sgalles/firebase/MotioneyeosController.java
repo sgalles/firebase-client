@@ -1,15 +1,20 @@
 package org.sgalles.firebase;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.zeroturnaround.exec.ProcessExecutor;
 
+import com.firebase.client.AuthData;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
+import com.firebase.client.Firebase.AuthResultHandler;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
+import com.firebase.security.token.TokenGenerator;
 
-public class MotioneyeosController implements ValueEventListener{
+public class MotioneyeosController {
 
 	private static final String MOTIONEYEOS_CHILD = "motioneyeos";
 	private static final String FIREWALL_CHILD = "firewall";
@@ -30,7 +35,52 @@ public class MotioneyeosController implements ValueEventListener{
 	
 	public MotioneyeosController(){
 		ref = new Firebase(Configuration.instance().getFirebaseAppUrl());
-		ref.addValueEventListener(this);
+		Map<String, Object> authPayload = new HashMap<String, Object>();
+		authPayload.put("uid", "raspberrypi");
+		TokenGenerator tokenGenerator = new TokenGenerator(Configuration.instance().getFirebaseSecret());
+		String token = tokenGenerator.createToken(authPayload);
+		ref.authWithCustomToken(token, new AuthResultHandler() {
+			@Override
+			public void onAuthenticated(AuthData authData) {
+				System.out.println("Login Succeeded! " + authData);
+			}
+			@Override
+			public void onAuthenticationError(FirebaseError error) {
+				System.out.println("Login Failed! " + error);
+				System.exit(1);
+			}
+			
+		});
+		ref.child(MOTIONEYEOS_CHILD).addValueEventListener(new ValueEventListener() {
+			
+			@Override
+			public void onDataChange(DataSnapshot snapshot) {
+				Boolean mustSwitchMotioneyeos = snapshot.child(SWITCH_CHILD).getValue(Boolean.class);
+		        if(Boolean.TRUE.equals(mustSwitchMotioneyeos)){
+		        	switchMotioneyeos();
+		        }
+			}
+			
+			@Override
+			public void onCancelled(FirebaseError error) {
+				System.out.println("FirebaseError=" + error);
+			}
+		});
+		ref.child(FIREWALL_CHILD).addValueEventListener(new ValueEventListener() {
+			
+			@Override
+			public void onDataChange(DataSnapshot snapshot) {
+				Boolean mustSwitchFirewall = snapshot.child(SWITCH_CHILD).getValue(Boolean.class);
+		        if(Boolean.TRUE.equals(mustSwitchFirewall)){
+		        	switchFirewall();
+		        }
+			}
+			
+			@Override
+			public void onCancelled(FirebaseError error) {
+				System.out.println("FirebaseError=" + error);
+			}
+		});
 	}
 
 
@@ -48,18 +98,6 @@ public class MotioneyeosController implements ValueEventListener{
 	}
 	
 
-	@Override
-	public void onDataChange(DataSnapshot snapshot) {
-		Boolean mustSwitchMotioneyeos = snapshot.child(MOTIONEYEOS_CHILD).child(SWITCH_CHILD).getValue(Boolean.class);
-        if(Boolean.TRUE.equals(mustSwitchMotioneyeos)){
-        	switchMotioneyeos();
-        }
-        Boolean mustSwitchFirewall = snapshot.child(FIREWALL_CHILD).child(SWITCH_CHILD).getValue(Boolean.class);
-        if(Boolean.TRUE.equals(mustSwitchFirewall)){
-        	switchFirewall();
-        }
-		
-	}
 	
 
 	private void checkMotioneyeosRunning() {
@@ -159,10 +197,5 @@ public class MotioneyeosController implements ValueEventListener{
 	}
 	
 
-
-	@Override
-	public void onCancelled(FirebaseError error) {
-		System.out.println("FirebaseError=" + error);
-	}
 
 }
