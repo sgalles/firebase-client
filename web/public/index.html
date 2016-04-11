@@ -20,13 +20,22 @@
 <script>
 $(function() {
 	var myFirebaseRef = new Firebase(conf.firebaseServer);
-	myFirebaseRef.authWithOAuthPopup("google", function(error, authData) {
-		  if (error) {
-			    console.log("Login Failed!", error);
-			  } else {
-			    console.log("Authenticated successfully with payload:", authData);
-			  }
-			});
+	myFirebaseRef.onAuth(function(authData) {
+		
+		  if (authData !== null) {
+		    console.log("Authenticated successfully with payload:", authData);
+		    // init application
+		    initApp();
+		  } else {
+		    // Try to authenticate with Google via OAuth redirection
+		    myFirebaseRef.authWithOAuthRedirect("google", function(error, authData) {
+		      if (error) {
+		        console.log("Login Failed!", error);
+		      }
+		    });
+		  }
+		})
+		
 	function initButton(buttonSubfix, firebaseRoot){
 		
 		var childSwitch = firebaseRoot.child("switch");
@@ -55,11 +64,13 @@ $(function() {
 	
 	}
 	
-	var childMotioneyeos = myFirebaseRef.child("motioneyeos");
-	initButton("MotionEyeOs",childMotioneyeos);
-	
-	var childFirewall = myFirebaseRef.child("firewall");
-	initButton("Firewall",childFirewall);
+	function initApp(){
+		var childMotioneyeos = myFirebaseRef.child("motioneyeos");
+		initButton("MotionEyeOs",childMotioneyeos);
+		
+		var childFirewall = myFirebaseRef.child("firewall");
+		initButton("Firewall",childFirewall);
+	}
 
 });
 </script>
