@@ -27,13 +27,22 @@ public class MotioneyeosController {
 	private AtomicReference<Boolean> motioneyeosRunning = new AtomicReference<>(null);
 	private AtomicReference<Boolean> firewallRunning = new AtomicReference<>(null);
 	
-	private final Firebase ref;
+	private Firebase ref = null;
 
 	public static void main(String[] args) throws Exception {
-		new MotioneyeosController().loop();
+		MotioneyeosController controller = new MotioneyeosController();
+		controller.initFirewall();
+		controller.initFirebase();
+		controller.loop();
 	}
 	
-	public MotioneyeosController(){
+	public void initFirewall(){
+		if(!isFirewallRunning()){
+			startFirewall();
+		}
+	}
+	
+	public void initFirebase(){
 		ref = new Firebase(Configuration.instance().getFirebaseAppUrl());
 		Map<String, Object> authPayload = new HashMap<String, Object>();
 		authPayload.put("uid", "raspberrypi");
@@ -120,22 +129,24 @@ public class MotioneyeosController {
 		}
 	}
 	
-	private void checkFirewallRunning() {
-
+	private boolean isFirewallRunning(){
 		try{
 			int exitValue = new ProcessExecutor()
 					.command("/bin/sh", "-c",
 							"iptables -L | grep www &>/dev/null")
 					.execute().getExitValue();
-			final Boolean updatedFirewallRunning = Boolean.valueOf(exitValue == 0);
-			
-			if (!updatedFirewallRunning.equals(firewallRunning.get())) {
-				firewallRunning.set(updatedFirewallRunning);
-				System.out.println("firewallRunning=" + firewallRunning);
-				firebaseUpdateFirewallRunning();
-			}
+			return Boolean.valueOf(exitValue == 0);
 		}catch(Exception e){
 			throw new IllegalStateException(e);
+		}
+	}
+	
+	private void checkFirewallRunning() {
+		final Boolean updatedFirewallRunning = isFirewallRunning();			
+		if (!updatedFirewallRunning.equals(firewallRunning.get())) {
+			firewallRunning.set(updatedFirewallRunning);
+			System.out.println("firewallRunning=" + firewallRunning);
+			firebaseUpdateFirewallRunning();
 		}
 	}
 	
@@ -161,20 +172,31 @@ public class MotioneyeosController {
 	
 	private void switchFirewall(){
 		
-		try{
-			firebaseResetFirewallSwitch();
-			if(Boolean.FALSE.equals(firewallRunning.get())){
-				System.out.println("Starting firewall...");
-				new ProcessExecutor()
-				.command("/usr/sbin/iptables -A INPUT -p tcp --destination-port 80 ! -s localhost -j DROP".split(" +"))
-				.start();
-			}else{
-				System.out.println("Stopping firewall...");
-				new ProcessExecutor()
-				.command("/usr/sbin/iptables -F".split(" +"))
-				.start();
-			}
-		}catch(Exception e){
+		firebaseResetFirewallSwitch();
+		if(Boolean.FALSE.equals(firewallRunning.get())){
+			startFirewall();
+		}else{
+			stopFirewall();
+		}
+	}
+
+	private void stopFirewall()  {
+		try {
+
+			System.out.println("Stopping firewall...");
+			new ProcessExecutor().command("/usr/sbin/iptables -F".split(" +")).start();
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+	private void startFirewall() {
+		try {
+			System.out.println("Starting firewall...");
+			new ProcessExecutor().command(
+					"/usr/sbin/iptables -A INPUT -p tcp --destination-port 80 ! -s localhost -j DROP".split(" +"))
+					.start();
+		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
