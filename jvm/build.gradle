@@ -38,6 +38,7 @@ remotes {
   raspberry {
     host = raspberryIp
     user = 'root'
+    password = raspberryPassword
   }
 }
 
