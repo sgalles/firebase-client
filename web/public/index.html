@@ -12,8 +12,6 @@
 <body>
 
  <div id="container" class="container">
-    <button id="buttonMotionEyeOs" type="button" class="btn btn-lg btn-block">MotionEyeOs</button>
-  	<button id="buttonFirewall" type="button" class="btn btn-lg btn-block">Firewall</button>
 </div>
 
 <script src="configuration.js"></script>
@@ -36,55 +34,47 @@ $(function() {
 		  }
 		})
 		
-	function initButton(buttonSubfix, firebaseRoot){
-		
-		var childSwitch = firebaseRoot.child("switch");
-		var childRunning = firebaseRoot.child("running");
-		var b = $("#button" +  buttonSubfix);
-		
-		b.click(function() {
-			childSwitch.set(true);
-		});
 	
-		childRunning.on("value", function(snapshot) {
-			if(snapshot.val()){
-				b.removeClass('btn-danger').addClass('btn-success');
-			}else{
-				b.removeClass('btn-success').addClass('btn-danger');
-			}
-		});
-	
-		childSwitch.on("value", function(snapshot) {
-			if(snapshot.val()){
-				b.addClass('active');
-			}else{
-				b.removeClass('active');
-			}
-		});
-	
-	}
-	
-
-
 	var widgetsFactory = {
 	    Button: function (childSnapshot) {
+	    	  var id = childSnapshot.key() 
 			  jQuery('<button/>', {
-				    id: childSnapshot.key(),
+				    id: id,
 				    type: 'button',
 				    class: 'btn btn-lg btn-block',
 				    text: childSnapshot.val().label
 				}).appendTo('#container');
+				var firebaseWidgets = myFirebaseRef.child("widgets");
+				var firebaseSelf = firebaseWidgets.child(id)
+				var childSwitch = firebaseSelf.child("switch");
+				var childRunning = firebaseSelf.child("running");
+				var b = $("#" + id);
+				
+				b.click(function() {
+					childSwitch.set(true);
+				});
+			
+				childRunning.on("value", function(snapshot) {
+					if(snapshot.val()){
+						b.removeClass('btn-danger').addClass('btn-success');
+					}else{
+						b.removeClass('btn-success').addClass('btn-danger');
+					}
+				});
+			
+				childSwitch.on("value", function(snapshot) {
+					if(snapshot.val()){
+						b.addClass('active');
+					}else{
+						b.removeClass('active');
+					}
+				});
+			  
 		  }
 	}
 
 	
 	function initApp(){
-		var childMotioneyeos = myFirebaseRef.child("motioneyeos");
-		initButton("MotionEyeOs",childMotioneyeos);
-		
-		var childFirewall = myFirebaseRef.child("firewall");
-		initButton("Firewall",childFirewall);
-		
 		var childWidgets = myFirebaseRef.child("widgets");
 		childWidgets.once("value", function(snapshot) {
 			  snapshot.forEach(function(childSnapshot) {
