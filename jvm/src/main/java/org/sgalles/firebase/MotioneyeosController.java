@@ -4,30 +4,22 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
+import org.sgalles.firebase.view.Button;
 import org.zeroturnaround.exec.ProcessExecutor;
 
 import com.firebase.client.AuthData;
-import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.Firebase.AuthResultHandler;
 import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
 import com.firebase.security.token.TokenGenerator;
 
 public class MotioneyeosController {
-
-	private static final String MOTIONEYEOS_CHILD = "motioneyeos";
-	private static final String FIREWALL_CHILD = "firewall";
-	private static final String RUNNING_CHILD = "running";
-	private static final String SWITCH_CHILD = "switch";
-	
-	private AtomicReference<Boolean> motioneyeosRunning = new AtomicReference<>(null);
-	private AtomicReference<Boolean> firewallRunning = new AtomicReference<>(null);
 	
 	private Firebase ref = null;
 	private final File motionEyeOsService;
+	private Button buttonMotioneyeos;
+	private Button buttonFirewall;
 
 	public static void main(String[] args) throws Exception {
 		MotioneyeosController controller = new MotioneyeosController();
@@ -48,7 +40,7 @@ public class MotioneyeosController {
 	
 	public void initFirewall(){
 		if(!isFirewallRunning()){
-			startFirewall();
+			switchFirewall(true);
 		}
 	}
 	
@@ -70,36 +62,12 @@ public class MotioneyeosController {
 			}
 			
 		});
-		ref.child(MOTIONEYEOS_CHILD).addValueEventListener(new ValueEventListener() {
-			
-			@Override
-			public void onDataChange(DataSnapshot snapshot) {
-				Boolean mustSwitchMotioneyeos = snapshot.child(SWITCH_CHILD).getValue(Boolean.class);
-		        if(Boolean.TRUE.equals(mustSwitchMotioneyeos)){
-		        	switchMotioneyeos();
-		        }
-			}
-			
-			@Override
-			public void onCancelled(FirebaseError error) {
-				System.out.println("FirebaseError=" + error);
-			}
-		});
-		ref.child(FIREWALL_CHILD).addValueEventListener(new ValueEventListener() {
-			
-			@Override
-			public void onDataChange(DataSnapshot snapshot) {
-				Boolean mustSwitchFirewall = snapshot.child(SWITCH_CHILD).getValue(Boolean.class);
-		        if(Boolean.TRUE.equals(mustSwitchFirewall)){
-		        	switchFirewall();
-		        }
-			}
-			
-			@Override
-			public void onCancelled(FirebaseError error) {
-				System.out.println("FirebaseError=" + error);
-			}
-		});
+		
+		buttonMotioneyeos = new Button(ref, "motioneyeos", "MotionEyeOs");
+		buttonMotioneyeos.setListener(this::switchMotionEyeOs);
+		buttonFirewall = new Button(ref, "firewall", "Firewall");
+		buttonFirewall.setListener(this::switchFirewall);
+		
 	}
 
 
@@ -107,8 +75,8 @@ public class MotioneyeosController {
 		while (true) {
 			try {
 				Thread.sleep(1000);
-				checkMotioneyeosRunning();
-				checkFirewallRunning();
+				buttonMotioneyeos.getModel().setRunning(isMotionEyeRunning());
+				buttonFirewall.getModel().setRunning(isFirewallRunning());
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -116,28 +84,20 @@ public class MotioneyeosController {
 		}
 	}
 	
-
-	
-
-	private void checkMotioneyeosRunning() {
-
+	private boolean isMotionEyeRunning(){
 		try{
 			int exitValue = new ProcessExecutor()
 					.command("/bin/sh", "-c",
 							"wget -q -t 1 -T 2 -O - http://127.0.0.1:$port/static/img/motioneye-logo.svg &>/dev/null")
 					.readOutput(true)
 					.execute().getExitValue();
-			final Boolean updatedMotioneyeosRunning = Boolean.valueOf(exitValue == 0);
+			return Boolean.valueOf(exitValue == 0);
 			
-			if (!updatedMotioneyeosRunning.equals(motioneyeosRunning.get())) {
-				motioneyeosRunning.set(updatedMotioneyeosRunning);
-				System.out.println("motioneyeosRunning=" + motioneyeosRunning);
-				firebaseUpdateMotioneyeosRunning();
-			}
 		}catch(Exception e){
 			throw new IllegalStateException(e);
 		}
 	}
+	
 	
 	private boolean isFirewallRunning(){
 		try{
@@ -151,83 +111,34 @@ public class MotioneyeosController {
 		}
 	}
 	
-	private void checkFirewallRunning() {
-		final Boolean updatedFirewallRunning = isFirewallRunning();			
-		if (!updatedFirewallRunning.equals(firewallRunning.get())) {
-			firewallRunning.set(updatedFirewallRunning);
-			System.out.println("firewallRunning=" + firewallRunning);
-			firebaseUpdateFirewallRunning();
-		}
-	}
-	
-	private void switchMotioneyeos(){
-		
+
+	private void switchMotionEyeOs(boolean start) {
 		try{
-			firebaseResetMotioneyeosSwitch();
-			if(Boolean.FALSE.equals(motioneyeosRunning.get())){
-				System.out.println("Starting motioneye...");
-				new ProcessExecutor()
-				.command(motionEyeOsService.getAbsolutePath(), "start")
-				.start();
-			}else{
-				System.out.println("Stopping motioneye...");
-				new ProcessExecutor()
-				.command(motionEyeOsService.getAbsolutePath(), "stop")
-				.start();
-			}
+			new ProcessExecutor()
+			.command(motionEyeOsService.getAbsolutePath(), start ? "start" : "stop")
+			.start();
 		}catch(Exception e){
 			throw new IllegalStateException(e);
 		}
 	}
-	
-	private void switchFirewall(){
-		
-		firebaseResetFirewallSwitch();
-		if(Boolean.FALSE.equals(firewallRunning.get())){
-			startFirewall();
-		}else{
-			stopFirewall();
-		}
-	}
 
-	private void stopFirewall()  {
+	private void switchFirewall(boolean start) {
 		try {
-
-			System.out.println("Stopping firewall...");
-			new ProcessExecutor().command("/usr/sbin/iptables -F".split(" +")).start();
-		} catch (Exception e) {
-			throw new IllegalStateException(e);
-		}
-	}
-
-	private void startFirewall() {
-		try {
-			System.out.println("Starting firewall...");
-			new ProcessExecutor().command(
-					"/usr/sbin/iptables -A INPUT -p tcp --destination-port 80 ! -s localhost -j DROP".split(" +"))
-					.start();
+			if (start) {
+				System.out.println("Starting firewall...");
+				new ProcessExecutor().command(
+						"/usr/sbin/iptables -A INPUT -p tcp --destination-port 80 ! -s localhost -j DROP".split(" +"))
+						.start();
+			} else {
+				System.out.println("Stopping firewall...");
+				new ProcessExecutor().command("/usr/sbin/iptables -F".split(" +")).start();
+			}
 		} catch (Exception e) {
 			throw new IllegalStateException(e);
 		}
 	}
 
 
-	private void firebaseUpdateMotioneyeosRunning() {
-		ref.child(MOTIONEYEOS_CHILD).child(RUNNING_CHILD).setValue(motioneyeosRunning.get());
-	}
-	
-	private void firebaseUpdateFirewallRunning() {
-		ref.child(FIREWALL_CHILD).child(RUNNING_CHILD).setValue(firewallRunning.get());
-	}
-	
-	private void firebaseResetMotioneyeosSwitch() {
-		ref.child(MOTIONEYEOS_CHILD).child(SWITCH_CHILD).setValue(false);
-	}
-	
-	private void firebaseResetFirewallSwitch() {
-		ref.child(FIREWALL_CHILD).child(SWITCH_CHILD).setValue(false);
-	}
-	
 
 
 }
