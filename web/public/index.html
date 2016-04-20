@@ -11,7 +11,7 @@
 </head>
 <body>
 
- <div class="container">
+ <div id="container" class="container">
     <button id="buttonMotionEyeOs" type="button" class="btn btn-lg btn-block">MotionEyeOs</button>
   	<button id="buttonFirewall" type="button" class="btn btn-lg btn-block">Firewall</button>
 </div>
@@ -64,12 +64,34 @@ $(function() {
 	
 	}
 	
+
+
+	var widgetsFactory = {
+	    Button: function (childSnapshot) {
+			  jQuery('<button/>', {
+				    id: childSnapshot.key(),
+				    type: 'button',
+				    class: 'btn btn-lg btn-block',
+				    text: childSnapshot.val().label
+				}).appendTo('#container');
+		  }
+	}
+
+	
 	function initApp(){
 		var childMotioneyeos = myFirebaseRef.child("motioneyeos");
 		initButton("MotionEyeOs",childMotioneyeos);
 		
 		var childFirewall = myFirebaseRef.child("firewall");
 		initButton("Firewall",childFirewall);
+		
+		var childWidgets = myFirebaseRef.child("widgets");
+		childWidgets.once("value", function(snapshot) {
+			  snapshot.forEach(function(childSnapshot) {
+				    var type = childSnapshot.val().type;
+				    widgetsFactory[type](childSnapshot)
+				  });
+	     });
 	}
 
 });
