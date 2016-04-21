@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.sgalles.firebase.view.Button;
+import org.sgalles.firebase.view.Presence;
 import org.zeroturnaround.exec.ProcessExecutor;
 
 import com.firebase.client.AuthData;
@@ -20,6 +21,7 @@ public class MotioneyeosController {
 	private final File motionEyeOsService;
 	private Button buttonMotioneyeos;
 	private Button buttonFirewall;
+	private Presence presence;
 
 	public static void main(String[] args) throws Exception {
 		MotioneyeosController controller = new MotioneyeosController();
@@ -67,6 +69,8 @@ public class MotioneyeosController {
 		buttonMotioneyeos.setListener(this::switchMotionEyeOs);
 		buttonFirewall = new Button(ref, "firewall", "Firewall");
 		buttonFirewall.setListener(this::switchFirewall);
+		buttonFirewall = new Button(ref, "firewall", "Firewall");
+		presence = new Presence(ref,"presence");
 		
 	}
 
