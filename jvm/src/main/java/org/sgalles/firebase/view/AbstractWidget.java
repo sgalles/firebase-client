@@ -26,6 +26,10 @@ public class AbstractWidget {
 	public Firebase getFirebaseRef() {
 		return firebaseRef;
 	}
+
+	public String getId() {
+		return id;
+	}
 	
 	
 	
