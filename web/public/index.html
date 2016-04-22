@@ -36,6 +36,28 @@ $(function() {
 		
 	
 	var widgetsFactory = {
+	
+		 Presence: function (childSnapshot) {
+	    	  var id = childSnapshot.key() 
+			  jQuery('<span/>', {
+				    id: id,
+				    class: 'label',
+				    text: 'Presence'
+				}).appendTo('#container');
+	    	   var firebaseWidgets = myFirebaseRef.child("widgets");
+			   var firebaseSelf = firebaseWidgets.child(id)
+			   var childConnected = firebaseSelf.child("connected");
+			   var span = $("#" + id);
+			   childConnected.on("value", function(snapshot) {
+					if(snapshot.val()){
+						span.removeClass('label-danger').addClass('label-success');
+					}else{
+						span.removeClass('label-success').addClass('label-danger');
+					}
+				});
+			   
+		 },
+		
 	    Button: function (childSnapshot) {
 	    	  var id = childSnapshot.key() 
 			  jQuery('<button/>', {
