@@ -25,13 +25,20 @@ public class MotioneyeosController {
 
 	public static void main(String[] args) throws Exception {
 		MotioneyeosController controller = new MotioneyeosController();
-		controller.initFirewall();
-		controller.initFirebase();
 		controller.loop();
 	}
 	
 	public MotioneyeosController(){
 		motionEyeOsService = findMotionEyeOsService();
+		initFirewall();
+		initFirebase();
+		buttonMotioneyeos = new Button(ref, "motioneyeos", "MotionEyeOs");
+		buttonFirewall = new Button(ref, "firewall", "Firewall");
+		buttonFirewall = new Button(ref, "firewall", "Firewall");
+		presence = new Presence(ref,"presence");
+		updateModels();
+		buttonMotioneyeos.setListener(this::switchMotionEyeOs);
+		buttonFirewall.setListener(this::switchFirewall);
 	}
 	
 	private static File findMotionEyeOsService(){
@@ -65,12 +72,7 @@ public class MotioneyeosController {
 			
 		});
 		
-		buttonMotioneyeos = new Button(ref, "motioneyeos", "MotionEyeOs");
-		buttonMotioneyeos.setListener(this::switchMotionEyeOs);
-		buttonFirewall = new Button(ref, "firewall", "Firewall");
-		buttonFirewall.setListener(this::switchFirewall);
-		buttonFirewall = new Button(ref, "firewall", "Firewall");
-		presence = new Presence(ref,"presence");
+		
 		
 	}
 
@@ -79,13 +81,17 @@ public class MotioneyeosController {
 		while (true) {
 			try {
 				Thread.sleep(1000);
-				buttonMotioneyeos.getModel().setRunning(isMotionEyeRunning());
-				buttonFirewall.getModel().setRunning(isFirewallRunning());
+				updateModels();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
 		}
+	}
+
+	private void updateModels() {
+		buttonMotioneyeos.getModel().setRunning(isMotionEyeRunning());
+		buttonFirewall.getModel().setRunning(isFirewallRunning());
 	}
 	
 	private boolean isMotionEyeRunning(){
