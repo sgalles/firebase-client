@@ -1,17 +1,17 @@
 package org.sgalles.firebase.view;
 
-import com.firebase.client.Firebase;
+import com.google.firebase.database.DatabaseReference;
 
 public class AbstractWidget {
 
 	private static final String CHILD_WIDGETS = "widgets";
 	private static final String CHILD_TYPE = "type";
 	
-	private final Firebase firebaseRef;
-	private final Firebase root;
+	private final DatabaseReference firebaseRef;
+	private final DatabaseReference root;
 	private final String id;
 
-	public AbstractWidget(Firebase ref, String id) {
+	public AbstractWidget(DatabaseReference ref, String id) {
 		super();
 		this.id = id;
 		this.firebaseRef = ref;
@@ -19,11 +19,11 @@ public class AbstractWidget {
 		this.root.child(CHILD_TYPE) .setValue(getClass().getSimpleName());
 	}
 
-	public Firebase getRoot() {
+	public DatabaseReference getRoot() {
 		return root;
 	}
 
-	public Firebase getFirebaseRef() {
+	public DatabaseReference getFirebaseRef() {
 		return firebaseRef;
 	}
 

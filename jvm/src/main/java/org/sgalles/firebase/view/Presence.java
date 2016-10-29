@@ -1,17 +1,17 @@
 package org.sgalles.firebase.view;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 
 public class Presence extends AbstractWidget {
 
 	
-	public Presence(Firebase ref, String id) {
+	public Presence(DatabaseReference ref, String id) {
 		super(ref,id);
-		Firebase connectedChild = getRoot().child("connected");
-		Firebase amOnline = ref.child(".info/connected");
+		DatabaseReference connectedChild = getRoot().child("connected");
+		DatabaseReference amOnline = ref.child(".info/connected");
 		amOnline.addValueEventListener(new ValueEventListener() {
 			
 			@Override
@@ -24,7 +24,7 @@ public class Presence extends AbstractWidget {
 			}
 			
 			@Override
-			public void onCancelled(FirebaseError error) {
+			public void onCancelled(DatabaseError error) {
 				System.out.println("FirebaseError=" + error);
 			}
 		});

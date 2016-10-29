@@ -1,2 +1,2 @@
 firebase.url=https://foobar.firebaseio.com
-firebase.secret=baz
+firebase.serviceaccount.file=/data/opt/secret_service_account.json

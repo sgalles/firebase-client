@@ -1,29 +1,31 @@
 package org.sgalles.firebase;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.sgalles.firebase.view.Button;
 import org.sgalles.firebase.view.Presence;
 import org.zeroturnaround.exec.ProcessExecutor;
 
-import com.firebase.client.AuthData;
-import com.firebase.client.Firebase;
-import com.firebase.client.Firebase.AuthResultHandler;
-import com.firebase.client.FirebaseError;
-import com.firebase.security.token.TokenGenerator;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Logger.Level;
 
 public class MotioneyeosController {
 	
-	private Firebase ref = null;
+	private DatabaseReference ref = null;
 	private final File motionEyeOsService;
 	private Button buttonMotioneyeos;
 	private Button buttonFirewall;
+	@SuppressWarnings("unused")
 	private Presence presence;
 
 	public static void main(String[] args) throws Exception {
+		System.out.println("Starting MotioneyeosController");
 		MotioneyeosController controller = new MotioneyeosController();
 		controller.loop();
 	}
@@ -54,26 +56,18 @@ public class MotioneyeosController {
 	}
 	
 	public void initFirebase(){
-		ref = new Firebase(Configuration.instance().getFirebaseAppUrl());
-		Map<String, Object> authPayload = new HashMap<String, Object>();
-		authPayload.put("uid", "raspberrypi");
-		TokenGenerator tokenGenerator = new TokenGenerator(Configuration.instance().getFirebaseSecret());
-		String token = tokenGenerator.createToken(authPayload);
-		ref.authWithCustomToken(token, new AuthResultHandler() {
-			@Override
-			public void onAuthenticated(AuthData authData) {
-				System.out.println("Login Succeeded! " + authData);
-			}
-			@Override
-			public void onAuthenticationError(FirebaseError error) {
-				System.out.println("Login Failed! " + error);
-				System.exit(1);
-			}
-			
-		});
-		
-		
-		
+		try {
+			FirebaseOptions options = new FirebaseOptions.Builder()
+					.setServiceAccount(new FileInputStream(Configuration.instance().getFirebaseServiceAccountFile()))
+					.setDatabaseUrl(Configuration.instance().getFirebaseAppUrl())
+					.build();
+					
+			FirebaseApp.initializeApp(options);
+			//FirebaseDatabase.getInstance().setLogLevel(Level.DEBUG);
+			ref = FirebaseDatabase.getInstance().getReference();
+		} catch (FileNotFoundException e) {
+			throw new IllegalStateException(e);
+		}		
 	}
 
 

@@ -2,20 +2,20 @@ package org.sgalles.firebase.view;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.ValueEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 
 public class Button extends AbstractWidget {
 
-	private final Firebase nodeRunning;
-	private final Firebase nodeSwitch;
+	private final DatabaseReference nodeRunning;
+	private final DatabaseReference nodeSwitch;
 	private final ButtonModel model;
 	private String label;
 	
 	
-	public Button(Firebase ref, String id, String label) {
+	public Button(DatabaseReference ref, String id, String label) {
 		super(ref,id);
 		this.label = label;
 		getRoot().child("label").setValue(label);
@@ -48,7 +48,7 @@ public class Button extends AbstractWidget {
 			}
 			
 			@Override
-			public void onCancelled(FirebaseError error) {
+			public void onCancelled(DatabaseError error) {
 				System.out.println("FirebaseError=" + error);
 			}
 		});

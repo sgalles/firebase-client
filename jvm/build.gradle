@@ -21,8 +21,8 @@ repositories {
 dependencies {
     // The production code uses the SLF4J logging API at compile time
     compile 'org.slf4j:slf4j-api:1.7.7'
-    compile('com.firebase:firebase-client-jvm:2.5.2+')
-    compile('com.firebase:firebase-token-generator:2.0.0')
+    compile('com.google.firebase:firebase-server-sdk:3.0.1')
+    //compile('com.firebase:firebase-token-generator:2.0.0')
     compile 'org.zeroturnaround:zt-exec:1.8'
     compile 'org.aeonbits.owner:owner-java8:1.0.9'
 

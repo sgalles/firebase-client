@@ -14,8 +14,8 @@ public interface Configuration extends Config{
 	@Key("firebase.url")
 	String getFirebaseAppUrl();
 	
-	@Key("firebase.secret")
-	String getFirebaseSecret();
+	@Key("firebase.serviceaccount.file")
+	String getFirebaseServiceAccountFile();
 	
 	static Configuration instance(){
 		return (Configuration)ConfigFactory.create(Configuration.class);
