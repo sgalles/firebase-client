@@ -4,10 +4,16 @@
   <title>Bootstrap Example</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+ 
+  <script src="/__/firebase/5.7.0/firebase-app.js"></script>
+  <script src="/__/firebase/5.7.0/firebase-database.js"></script>
+  <script src="/__/firebase/5.7.0/firebase-auth.js"></script>
+  <script src="/__/firebase/init.js"></script>
+
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-  <script src="https://cdn.firebase.com/js/client/2.4.2/firebase.js"></script>
+  
 </head>
 <body>
 
@@ -17,34 +23,41 @@
 <script src="configuration.js"></script>
 <script>
 $(function() {
-	var myFirebaseRef = new Firebase(conf.firebaseServer);
-	myFirebaseRef.onAuth(function(authData) {
 		
-		  if (authData !== null) {
-		    console.log("Authenticated successfully with payload:", authData);
-		    // init application
-		    initApp();
-		  } else {
-		    // Try to authenticate with Google via OAuth redirection
-		    myFirebaseRef.authWithOAuthRedirect("google", function(error, authData) {
-		      if (error) {
-		        console.log("Login Failed!", error);
-		      }
-		    });
-		  }
-		})
+	  firebase.auth().getRedirectResult().then(function(result) {
+	  
+       var user = result.user;
+          if(user){
+               console.log("Authenticated successfully with payload:", user);
+      		// init application
+      		initApp()
+          }else{
+            var provider = new firebase.auth.GoogleAuthProvider();
+        	// [END createprovider]
+        	// [START addscopes]
+        	provider.addScope('https://www.googleapis.com/auth/plus.login');
+        	// [END addscopes]
+        	// [START signin]
+        	firebase.auth().signInWithRedirect(provider);
+        	// [END_EXCLUDE]
+          }
+        
+        
+      });
+   
+	
 		
 	
 	var widgetsFactory = {
 	
 		 Presence: function (childSnapshot) {
-	    	  var id = childSnapshot.key() 
+	    	  var id = childSnapshot.key 
 			  jQuery('<span/>', {
 				    id: id,
 				    class: 'label',
 				    text: 'Presence'
 				}).appendTo('#container');
-	    	   var firebaseWidgets = myFirebaseRef.child("widgets");
+	    	   var firebaseWidgets = firebase.database().ref("widgets");
 			   var firebaseSelf = firebaseWidgets.child(id)
 			   var childConnected = firebaseSelf.child("connected");
 			   var span = $("#" + id);
@@ -59,14 +72,14 @@ $(function() {
 		 },
 		
 	    Button: function (childSnapshot) {
-	    	  var id = childSnapshot.key() 
+	    	  var id = childSnapshot.key 
 			  jQuery('<button/>', {
 				    id: id,
 				    type: 'button',
 				    class: 'btn btn-lg btn-block',
 				    text: childSnapshot.val().label
 				}).appendTo('#container');
-				var firebaseWidgets = myFirebaseRef.child("widgets");
+				var firebaseWidgets = firebase.database().ref("widgets");
 				var firebaseSelf = firebaseWidgets.child(id)
 				var childSwitch = firebaseSelf.child("switch");
 				var childRunning = firebaseSelf.child("running");
@@ -97,7 +110,7 @@ $(function() {
 
 	
 	function initApp(){
-		var childWidgets = myFirebaseRef.child("widgets");
+		var childWidgets = firebase.database().ref("widgets");
 		childWidgets.once("value", function(snapshot) {
 			  snapshot.forEach(function(childSnapshot) {
 				    var type = childSnapshot.val().type;
